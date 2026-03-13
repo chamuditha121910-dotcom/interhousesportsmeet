@@ -48,78 +48,97 @@
             justify-content: center;
             align-items: center;
             z-index: 3000;
-            animation: fadeOut 0.5s ease 4s forwards;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .intro-overlay.hidden {
+            opacity: 0;
             pointer-events: none;
         }
 
-        @keyframes fadeOut {
-            to { opacity: 0; visibility: hidden; }
+        .intro-overlay.removed {
+            display: none;
+        }
+
+        .intro-stage {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transform: scale(0.8);
+            transition: all 0.5s ease;
+        }
+
+        .intro-stage.active {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        .intro-stage.exit {
+            opacity: 0;
+            transform: scale(1.2);
         }
 
         .intro-text {
-            font-size: 3rem;
+            font-size: 4rem;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 4px;
             text-align: center;
-            opacity: 0;
-            animation: slideUpFade 1s ease forwards;
         }
 
-        .intro-text.college {
-            color: var(--primary-yellow);
-            animation-delay: 0.5s;
-        }
-
-        .intro-text.year {
-            color: white;
+        .intro-subtext {
             font-size: 2rem;
+            font-weight: 600;
             margin-top: 1rem;
-            animation-delay: 1s;
+            letter-spacing: 2px;
         }
 
-        .battle-text {
-            font-size: 2.5rem;
-            font-weight: 700;
-            margin-top: 3rem;
-            opacity: 0;
-            animation: scaleIn 0.8s ease 1.5s forwards;
+        .college-name {
+            color: var(--primary-yellow);
+            text-shadow: 0 0 30px rgba(255, 215, 0, 0.5);
+        }
+
+        .event-name {
             color: white;
         }
 
-        .houses-line {
-            display: flex;
-            gap: 2rem;
-            margin-top: 2rem;
-            opacity: 0;
-            animation: slideUpFade 1s ease 2s forwards;
+        .event-year {
+            color: var(--primary-yellow);
+            font-size: 3rem;
         }
 
-        .house-name-intro {
-            font-size: 1.8rem;
+        .houses-container {
+            display: flex;
+            gap: 3rem;
+            align-items: center;
+        }
+
+        .house-box {
+            padding: 1rem 2rem;
+            border: 3px solid;
+            border-radius: 12px;
+            font-size: 2rem;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            padding: 0.5rem 1.5rem;
-            border-radius: 8px;
-            border: 2px solid;
-            text-shadow: 0 0 20px currentColor;
+            letter-spacing: 3px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.4s ease;
         }
 
-        .house-north { color: var(--north-green); border-color: var(--north-green); box-shadow: 0 0 30px rgba(45, 138, 62, 0.3); }
-        .house-south { color: var(--south-blue); border-color: var(--south-blue); box-shadow: 0 0 30px rgba(30, 64, 175, 0.3); }
-        .house-east { color: var(--east-yellow); border-color: var(--east-yellow); box-shadow: 0 0 30px rgba(245, 158, 11, 0.3); }
-        .house-west { color: var(--west-red); border-color: var(--west-red); box-shadow: 0 0 30px rgba(220, 38, 38, 0.3); }
-
-        @keyframes slideUpFade {
-            from { transform: translateY(30px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+        .house-box.show {
+            opacity: 1;
+            transform: translateY(0);
         }
 
-        @keyframes scaleIn {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
+        .house-north { color: var(--north-green); border-color: var(--north-green); box-shadow: 0 0 30px rgba(45, 138, 62, 0.4); }
+        .house-south { color: var(--south-blue); border-color: var(--south-blue); box-shadow: 0 0 30px rgba(30, 64, 175, 0.4); }
+        .house-east { color: var(--east-yellow); border-color: var(--east-yellow); box-shadow: 0 0 30px rgba(245, 158, 11, 0.4); }
+        .house-west { color: var(--west-red); border-color: var(--west-red); box-shadow: 0 0 30px rgba(220, 38, 38, 0.4); }
 
         /* Login Modal */
         .login-overlay {
@@ -879,10 +898,12 @@
             .charts-grid { grid-template-columns: 1fr; }
             .nav-tabs { flex-wrap: wrap; }
             .leader-name { font-size: 2rem; }
-            .intro-text { font-size: 1.5rem; }
-            .battle-text { font-size: 1.5rem; }
-            .houses-line { flex-direction: column; gap: 1rem; }
-            .house-name-intro { font-size: 1.2rem; }
+            
+            .intro-text { font-size: 2rem; }
+            .intro-subtext { font-size: 1.2rem; }
+            .event-year { font-size: 1.5rem; }
+            .houses-container { flex-direction: column; gap: 1rem; }
+            .house-box { font-size: 1.2rem; padding: 0.5rem 1rem; }
         }
 
         .hidden { display: none !important; }
@@ -890,16 +911,27 @@
 <base target="_blank">
 </head>
 <body>
-    <!-- Intro Animation -->
+    <!-- Sequential Intro Animation -->
     <div class="intro-overlay" id="introOverlay">
-        <div class="intro-text college">BUONAVISTA COLLEGE</div>
-        <div class="intro-text year">Annual Inter-House Sports Meet 2026</div>
-        <div class="battle-text">Battle of Houses</div>
-        <div class="houses-line">
-            <div class="house-name-intro house-north">NORTH</div>
-            <div class="house-name-intro house-south">SOUTH</div>
-            <div class="house-name-intro house-east">EAST</div>
-            <div class="house-name-intro house-west">WEST</div>
+        <!-- Stage 1: College Name -->
+        <div class="intro-stage" id="stage1">
+            <div class="intro-text college-name">BUONAVISTA COLLEGE</div>
+        </div>
+
+        <!-- Stage 2: Event Name -->
+        <div class="intro-stage" id="stage2">
+            <div class="intro-text event-name">INTER-HOUSE SPORTS MEET</div>
+            <div class="intro-subtext event-year">2026</div>
+        </div>
+
+        <!-- Stage 3: Houses -->
+        <div class="intro-stage" id="stage3">
+            <div class="houses-container">
+                <div class="house-box house-north" id="houseNorth">NORTH</div>
+                <div class="house-box house-south" id="houseSouth">SOUTH</div>
+                <div class="house-box house-east" id="houseEast">EAST</div>
+                <div class="house-box house-west" id="houseWest">WEST</div>
+            </div>
         </div>
     </div>
 
@@ -1086,6 +1118,62 @@
     </div>
 
     <script>
+        // Sequential Animation Controller
+        function runIntroAnimation() {
+            const overlay = document.getElementById('introOverlay');
+            const stage1 = document.getElementById('stage1');
+            const stage2 = document.getElementById('stage2');
+            const stage3 = document.getElementById('stage3');
+            const houses = ['houseNorth', 'houseSouth', 'houseEast', 'houseWest'];
+            
+            // Timeline:
+            // 0ms: Show Stage 1 (College)
+            // 2000ms: Hide Stage 1, Show Stage 2 (Event)
+            // 4000ms: Hide Stage 2, Show Stage 3 (Houses)
+            // 5500ms: Show houses one by one
+            // 7500ms: Fade out entire overlay
+            
+            // Stage 1: College (0-2000ms)
+            setTimeout(() => {
+                stage1.classList.add('active');
+            }, 100);
+            
+            setTimeout(() => {
+                stage1.classList.remove('active');
+                stage1.classList.add('exit');
+            }, 2000);
+            
+            // Stage 2: Event (2000-4000ms)
+            setTimeout(() => {
+                stage2.classList.add('active');
+            }, 2200);
+            
+            setTimeout(() => {
+                stage2.classList.remove('active');
+                stage2.classList.add('exit');
+            }, 4000);
+            
+            // Stage 3: Houses (4000-7500ms)
+            setTimeout(() => {
+                stage3.classList.add('active');
+            }, 4200);
+            
+            // Show houses one by one with delay
+            houses.forEach((houseId, index) => {
+                setTimeout(() => {
+                    document.getElementById(houseId).classList.add('show');
+                }, 4500 + (index * 400));
+            });
+            
+            // End animation
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                setTimeout(() => {
+                    overlay.classList.add('removed');
+                }, 500);
+            }, 7500);
+        }
+
         // Admin Authentication
         const ADMIN_PASSWORD = 'buonavista2024';
         let isAdminLoggedIn = false;
@@ -1547,15 +1635,12 @@
             const uniqueEvents = getAllUniqueEvents();
             const houseData = Object.values(houses);
             
-            // For each house, create data points for each unique event
-            // If house doesn't have that event, value is 0 or we can interpolate
             const datasets = houseData.map(house => {
                 const data = uniqueEvents.map(eventName => {
                     const event = house.events.find(e => e.name === eventName);
                     return event ? event.points : 0;
                 });
                 
-                // Calculate cumulative totals for progressive line
                 const cumulative = [];
                 let sum = 0;
                 data.forEach(val => {
@@ -1628,7 +1713,6 @@
                 }
             });
             
-            // New Timeline Chart with actual event names
             const timelineData = buildTimelineData();
             const lineCtx = document.getElementById('lineChart').getContext('2d');
             
@@ -1707,6 +1791,9 @@
         loadData();
         renderLeaderboard();
         renderHouses();
+        
+        // Start animation sequence
+        runIntroAnimation();
 
         const style = document.createElement('style');
         style.textContent = `
