@@ -675,6 +675,16 @@
             color: white;
         }
 
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: var(--text-primary);
+            border: 1px solid var(--glass-border);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
         .events-list {
             margin-top: 2rem;
         }
@@ -753,6 +763,25 @@
             50% { opacity: 0; }
         }
 
+        /* Data Management Panel */
+        .data-management {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background: rgba(0,0,0,0.2);
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .data-management h4 {
+            color: var(--primary-yellow);
+            margin-bottom: 1rem;
+        }
+
+        .danger-zone {
+            border-color: #ef4444;
+            background: rgba(220, 38, 38, 0.05);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .header h1 { font-size: 1.8rem; }
@@ -797,7 +826,7 @@
     <div class="container">
         <!-- Leaderboard Section -->
         <section id="leaderboard" class="section active">
-            <!-- Current Leader Display (Replaced Total Points) -->
+            <!-- Current Leader Display -->
             <div class="leader-display" id="leaderDisplay">
                 <div class="leader-label">Current Champion</div>
                 <div class="leader-name" id="leaderName">--</div>
@@ -920,7 +949,7 @@
                 <div style="display: flex; gap: 1rem; margin-top: 1rem;">
                     <button class="btn btn-primary" onclick="addEvent()">Add Event</button>
                     <button class="btn btn-warning" onclick="updateEvent()" id="updateBtn" style="display: none;">Update Event</button>
-                    <button class="btn" onclick="clearForm()" style="background: var(--card-bg); color: var(--text-primary);">Clear</button>
+                    <button class="btn btn-secondary" onclick="clearForm()">Clear</button>
                 </div>
             </div>
 
@@ -940,12 +969,28 @@
                     <!-- Admin events injected by JS -->
                 </div>
             </div>
+
+            <!-- Data Management -->
+            <div class="admin-panel danger-zone">
+                <h3 style="margin-bottom: 1.5rem; color: #ef4444;">⚠️ Data Management</h3>
+                <p style="color: var(--text-secondary); margin-bottom: 1rem;">
+                    Warning: These actions affect stored data permanently.
+                </p>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <button class="btn btn-danger" onclick="resetAllData()">🗑️ Reset All Data</button>
+                    <button class="btn btn-secondary" onclick="exportData()">📥 Export Data</button>
+                    <label class="btn btn-primary" style="cursor: pointer;">
+                        📤 Import Data
+                        <input type="file" id="importFile" style="display: none;" accept=".json" onchange="importData(this)">
+                    </label>
+                </div>
+            </div>
         </section>
     </div>
 
     <script>
         // Admin Authentication
-        const ADMIN_PASSWORD = 'buonavista2024'; // Change this to your desired password
+        const ADMIN_PASSWORD = 'buonavista2024';
         let isAdminLoggedIn = false;
 
         function requestAdminAccess() {
@@ -978,7 +1023,9 @@
             showNotification('Logged out successfully');
         }
 
-        // Data Structure
+        // Data Structure with LocalStorage Persistence
+        const STORAGE_KEY = 'buonavista_sports_meet_data';
+        
         let houses = {
             north: { name: 'North House', color: '#2d8a3e', colorClass: 'north-bar', total: 0, events: [] },
             south: { name: 'South House', color: '#1e40af', colorClass: 'south-bar', total: 0, events: [] },
@@ -986,23 +1033,77 @@
             west: { name: 'West House', color: '#dc2626', colorClass: 'west-bar', total: 0, events: [] }
         };
 
-        // Sample data initialization
+        // Load data from LocalStorage or initialize with sample data
+        function loadData() {
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    const parsed = JSON.parse(stored);
+                    // Validate data structure
+                    if (parsed && parsed.north && parsed.south && parsed.east && parsed.west) {
+                        houses = parsed;
+                        console.log('Data loaded from storage');
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Error loading data:', e);
+                }
+            }
+            // If no valid stored data, initialize with sample data
+            initSampleData();
+            saveData();
+        }
+
+        // Save data to LocalStorage
+        function saveData() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(houses));
+                console.log('Data saved to storage');
+            } catch (e) {
+                console.error('Error saving data:', e);
+                showNotification('Error saving data!');
+            }
+        }
+
+        // Sample data initialization (only runs first time or after reset)
         function initSampleData() {
-            addEventData('north', '100m Race', 10);
-            addEventData('north', 'Relay', 15);
-            addEventData('north', 'Long Jump', 8);
-            addEventData('south', '100m Race', 12);
-            addEventData('south', 'Relay', 10);
-            addEventData('east', '100m Race', 8);
-            addEventData('east', 'Long Jump', 12);
-            addEventData('west', 'Relay', 14);
-            addEventData('west', 'Shot Put', 10);
+            houses.north.events = [
+                { name: '100m Race', points: 10, id: Date.now() + 1 },
+                { name: 'Relay', points: 15, id: Date.now() + 2 },
+                { name: 'Long Jump', points: 8, id: Date.now() + 3 }
+            ];
+            houses.north.total = 33;
+
+            houses.south.events = [
+                { name: '100m Race', points: 12, id: Date.now() + 4 },
+                { name: 'Relay', points: 10, id: Date.now() + 5 }
+            ];
+            houses.south.total = 22;
+
+            houses.east.events = [
+                { name: '100m Race', points: 8, id: Date.now() + 6 },
+                { name: 'Long Jump', points: 12, id: Date.now() + 7 }
+            ];
+            houses.east.total = 20;
+
+            houses.west.events = [
+                { name: 'Relay', points: 14, id: Date.now() + 8 },
+                { name: 'Shot Put', points: 10, id: Date.now() + 9 }
+            ];
+            houses.west.total = 24;
         }
 
         function addEventData(houseId, eventName, points) {
             const house = houses[houseId];
-            house.events.push({ name: eventName, points: points, id: Date.now() + Math.random() });
+            const newEvent = { 
+                name: eventName, 
+                points: points, 
+                id: Date.now() + Math.random() 
+            };
+            house.events.push(newEvent);
             house.total += points;
+            saveData(); // Persist immediately
+            return newEvent;
         }
 
         // State management
@@ -1128,7 +1229,9 @@
             if (house.events.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">No events recorded yet</td></tr>';
             } else {
-                house.events.forEach(event => {
+                // Sort events by points descending
+                const sortedEvents = [...house.events].sort((a, b) => b.points - a.points);
+                sortedEvents.forEach(event => {
                     const percentage = house.total > 0 ? ((event.points / house.total) * 100).toFixed(1) : 0;
                     const row = document.createElement('tr');
                     row.innerHTML = `
@@ -1159,7 +1262,7 @@
             renderAdminList();
             updateAll();
             
-            showNotification('Event added successfully!');
+            showNotification('Event added and saved!');
         }
 
         function updateEvent() {
@@ -1169,21 +1272,35 @@
             const eventName = document.getElementById('adminEvent').value.trim();
             const points = parseInt(document.getElementById('adminPoints').value) || 0;
             
+            if (!eventName) {
+                alert('Please enter an event name');
+                return;
+            }
+            
+            // Find and update event
             for (let h in houses) {
                 const house = houses[h];
                 const eventIndex = house.events.findIndex(e => e.id === editingEventId);
                 if (eventIndex !== -1) {
+                    // Remove old points
                     house.total -= house.events[eventIndex].points;
-                    house.events[eventIndex] = { name: eventName, points: points, id: editingEventId };
+                    // Update event
+                    house.events[eventIndex] = { 
+                        name: eventName, 
+                        points: points, 
+                        id: editingEventId 
+                    };
+                    // Add new points
                     house.total += points;
                     break;
                 }
             }
             
+            saveData(); // Persist changes
             clearForm();
             renderAdminList();
             updateAll();
-            showNotification('Event updated successfully!');
+            showNotification('Event updated and saved!');
         }
 
         function deleteEvent(houseId, eventId) {
@@ -1194,9 +1311,10 @@
             if (eventIndex !== -1) {
                 house.total -= house.events[eventIndex].points;
                 house.events.splice(eventIndex, 1);
+                saveData(); // Persist deletion
                 renderAdminList();
                 updateAll();
-                showNotification('Event deleted!');
+                showNotification('Event deleted and saved!');
             }
         }
 
@@ -1209,6 +1327,8 @@
                 document.getElementById('adminPoints').value = event.points;
                 editingEventId = eventId;
                 document.getElementById('updateBtn').style.display = 'inline-block';
+                // Scroll to form
+                document.querySelector('.admin-panel').scrollIntoView({ behavior: 'smooth' });
             }
         }
 
@@ -1227,7 +1347,10 @@
             Object.entries(houses).forEach(([id, house]) => {
                 if (filter !== 'all' && filter !== id) return;
                 
-                house.events.forEach(event => {
+                // Sort events by newest first
+                const sortedEvents = [...house.events].sort((a, b) => b.id - a.id);
+                
+                sortedEvents.forEach(event => {
                     const item = document.createElement('div');
                     item.className = 'event-item';
                     item.innerHTML = `
@@ -1249,6 +1372,70 @@
             }
         }
 
+        // Data Management Functions
+        function resetAllData() {
+            if (!confirm('⚠️ WARNING: This will delete ALL data permanently!\n\nAre you sure you want to reset to default sample data?')) {
+                return;
+            }
+            
+            // Clear storage
+            localStorage.removeItem(STORAGE_KEY);
+            
+            // Reset to initial state
+            houses = {
+                north: { name: 'North House', color: '#2d8a3e', colorClass: 'north-bar', total: 0, events: [] },
+                south: { name: 'South House', color: '#1e40af', colorClass: 'south-bar', total: 0, events: [] },
+                east: { name: 'East House', color: '#f59e0b', colorClass: 'east-bar', total: 0, events: [] },
+                west: { name: 'West House', color: '#dc2626', colorClass: 'west-bar', total: 0, events: [] }
+            };
+            
+            initSampleData();
+            saveData();
+            updateAll();
+            renderAdminList();
+            showNotification('All data reset to defaults!');
+        }
+
+        function exportData() {
+            const dataStr = JSON.stringify(houses, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(dataBlob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `buonavista_sports_meet_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            showNotification('Data exported successfully!');
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    // Validate structure
+                    if (imported && imported.north && imported.south && imported.east && imported.west) {
+                        houses = imported;
+                        saveData();
+                        updateAll();
+                        renderAdminList();
+                        showNotification('Data imported successfully!');
+                    } else {
+                        alert('Invalid data format!');
+                    }
+                } catch (err) {
+                    alert('Error reading file: ' + err.message);
+                }
+            };
+            reader.readAsText(file);
+            input.value = ''; // Reset input
+        }
+
         function showNotification(message) {
             const notif = document.createElement('div');
             notif.style.cssText = `
@@ -1263,6 +1450,7 @@
                 z-index: 1000;
                 animation: slideIn 0.3s ease;
                 font-weight: 600;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             `;
             notif.textContent = message;
             document.body.appendChild(notif);
@@ -1370,7 +1558,7 @@
         }
 
         // Initialize
-        initSampleData();
+        loadData(); // Load from storage instead of initSampleData
         renderLeaderboard();
         renderHouses();
 
