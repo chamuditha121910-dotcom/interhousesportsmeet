@@ -35,6 +35,92 @@
             overflow-x: hidden;
         }
 
+        /* Intro Animation Overlay */
+        .intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, var(--primary-green) 0%, var(--primary-black) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            animation: fadeOut 0.5s ease 4s forwards;
+            pointer-events: none;
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; visibility: hidden; }
+        }
+
+        .intro-text {
+            font-size: 3rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-align: center;
+            opacity: 0;
+            animation: slideUpFade 1s ease forwards;
+        }
+
+        .intro-text.college {
+            color: var(--primary-yellow);
+            animation-delay: 0.5s;
+        }
+
+        .intro-text.year {
+            color: white;
+            font-size: 2rem;
+            margin-top: 1rem;
+            animation-delay: 1s;
+        }
+
+        .battle-text {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-top: 3rem;
+            opacity: 0;
+            animation: scaleIn 0.8s ease 1.5s forwards;
+            color: white;
+        }
+
+        .houses-line {
+            display: flex;
+            gap: 2rem;
+            margin-top: 2rem;
+            opacity: 0;
+            animation: slideUpFade 1s ease 2s forwards;
+        }
+
+        .house-name-intro {
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 0.5rem 1.5rem;
+            border-radius: 8px;
+            border: 2px solid;
+            text-shadow: 0 0 20px currentColor;
+        }
+
+        .house-north { color: var(--north-green); border-color: var(--north-green); box-shadow: 0 0 30px rgba(45, 138, 62, 0.3); }
+        .house-south { color: var(--south-blue); border-color: var(--south-blue); box-shadow: 0 0 30px rgba(30, 64, 175, 0.3); }
+        .house-east { color: var(--east-yellow); border-color: var(--east-yellow); box-shadow: 0 0 30px rgba(245, 158, 11, 0.3); }
+        .house-west { color: var(--west-red); border-color: var(--west-red); box-shadow: 0 0 30px rgba(220, 38, 38, 0.3); }
+
+        @keyframes slideUpFade {
+            from { transform: translateY(30px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
         /* Login Modal */
         .login-overlay {
             position: fixed;
@@ -793,6 +879,10 @@
             .charts-grid { grid-template-columns: 1fr; }
             .nav-tabs { flex-wrap: wrap; }
             .leader-name { font-size: 2rem; }
+            .intro-text { font-size: 1.5rem; }
+            .battle-text { font-size: 1.5rem; }
+            .houses-line { flex-direction: column; gap: 1rem; }
+            .house-name-intro { font-size: 1.2rem; }
         }
 
         .hidden { display: none !important; }
@@ -800,6 +890,19 @@
 <base target="_blank">
 </head>
 <body>
+    <!-- Intro Animation -->
+    <div class="intro-overlay" id="introOverlay">
+        <div class="intro-text college">BUONAVISTA COLLEGE</div>
+        <div class="intro-text year">Annual Inter-House Sports Meet 2026</div>
+        <div class="battle-text">Battle of Houses</div>
+        <div class="houses-line">
+            <div class="house-name-intro house-north">NORTH</div>
+            <div class="house-name-intro house-south">SOUTH</div>
+            <div class="house-name-intro house-east">EAST</div>
+            <div class="house-name-intro house-west">WEST</div>
+        </div>
+    </div>
+
     <!-- Login Modal -->
     <div class="login-overlay" id="loginOverlay">
         <div class="login-box">
@@ -826,7 +929,6 @@
     <div class="container">
         <!-- Leaderboard Section -->
         <section id="leaderboard" class="section active">
-            <!-- Current Leader Display -->
             <div class="leader-display" id="leaderDisplay">
                 <div class="leader-label">Current Champion</div>
                 <div class="leader-name" id="leaderName">--</div>
@@ -840,7 +942,6 @@
             </div>
 
             <div class="podium-container" id="podiumContainer">
-                <!-- Podium cards injected by JS -->
             </div>
 
             <div style="text-align: center; margin-top: 2rem;">
@@ -852,7 +953,6 @@
         <section id="houses" class="section">
             <h2 style="text-align: center; margin-bottom: 2rem; font-size: 2rem;">House Standings</h2>
             <div class="houses-grid" id="housesGrid">
-                <!-- House cards injected by JS -->
             </div>
         </section>
 
@@ -882,7 +982,6 @@
                     </tr>
                 </thead>
                 <tbody id="detailTableBody">
-                    <!-- Detail rows injected by JS -->
                 </tbody>
             </table>
         </section>
@@ -966,11 +1065,9 @@
                     </select>
                 </div>
                 <div id="adminEventsList" class="events-list">
-                    <!-- Admin events injected by JS -->
                 </div>
             </div>
 
-            <!-- Data Management -->
             <div class="admin-panel danger-zone">
                 <h3 style="margin-bottom: 1.5rem; color: #ef4444;">⚠️ Data Management</h3>
                 <p style="color: var(--text-secondary); margin-bottom: 1rem;">
@@ -1033,13 +1130,11 @@
             west: { name: 'West House', color: '#dc2626', colorClass: 'west-bar', total: 0, events: [] }
         };
 
-        // Load data from LocalStorage or initialize with sample data
         function loadData() {
             const stored = localStorage.getItem(STORAGE_KEY);
             if (stored) {
                 try {
                     const parsed = JSON.parse(stored);
-                    // Validate data structure
                     if (parsed && parsed.north && parsed.south && parsed.east && parsed.west) {
                         houses = parsed;
                         console.log('Data loaded from storage');
@@ -1049,12 +1144,10 @@
                     console.error('Error loading data:', e);
                 }
             }
-            // If no valid stored data, initialize with sample data
             initSampleData();
             saveData();
         }
 
-        // Save data to LocalStorage
         function saveData() {
             try {
                 localStorage.setItem(STORAGE_KEY, JSON.stringify(houses));
@@ -1065,7 +1158,6 @@
             }
         }
 
-        // Sample data initialization (only runs first time or after reset)
         function initSampleData() {
             houses.north.events = [
                 { name: '100m Race', points: 10, id: Date.now() + 1 },
@@ -1102,15 +1194,13 @@
             };
             house.events.push(newEvent);
             house.total += points;
-            saveData(); // Persist immediately
+            saveData();
             return newEvent;
         }
 
-        // State management
         let editingEventId = null;
         let charts = {};
 
-        // Navigation
         function showSection(sectionId) {
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
@@ -1136,7 +1226,6 @@
             }
         }
 
-        // Update Current Leader Display
         function updateLeaderDisplay() {
             const sorted = Object.entries(houses).sort((a, b) => b[1].total - a[1].total);
             const leader = sorted[0];
@@ -1152,7 +1241,6 @@
             }
         }
 
-        // Render Leaderboard
         function renderLeaderboard() {
             updateLeaderDisplay();
             
@@ -1181,7 +1269,6 @@
             });
         }
 
-        // Render All Houses
         function renderHouses() {
             const grid = document.getElementById('housesGrid');
             const sorted = Object.entries(houses).sort((a, b) => b[1].total - a[1].total);
@@ -1216,7 +1303,6 @@
             });
         }
 
-        // Show House Detail
         function showHouseDetail(houseId) {
             const house = houses[houseId];
             document.getElementById('detailHouseName').textContent = house.name;
@@ -1229,7 +1315,6 @@
             if (house.events.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="3" style="text-align: center; color: var(--text-secondary);">No events recorded yet</td></tr>';
             } else {
-                // Sort events by points descending
                 const sortedEvents = [...house.events].sort((a, b) => b.points - a.points);
                 sortedEvents.forEach(event => {
                     const percentage = house.total > 0 ? ((event.points / house.total) * 100).toFixed(1) : 0;
@@ -1246,7 +1331,6 @@
             showSection('houseDetail');
         }
 
-        // Admin Functions
         function addEvent() {
             const houseId = document.getElementById('adminHouse').value;
             const eventName = document.getElementById('adminEvent').value.trim();
@@ -1277,26 +1361,22 @@
                 return;
             }
             
-            // Find and update event
             for (let h in houses) {
                 const house = houses[h];
                 const eventIndex = house.events.findIndex(e => e.id === editingEventId);
                 if (eventIndex !== -1) {
-                    // Remove old points
                     house.total -= house.events[eventIndex].points;
-                    // Update event
                     house.events[eventIndex] = { 
                         name: eventName, 
                         points: points, 
                         id: editingEventId 
                     };
-                    // Add new points
                     house.total += points;
                     break;
                 }
             }
             
-            saveData(); // Persist changes
+            saveData();
             clearForm();
             renderAdminList();
             updateAll();
@@ -1311,7 +1391,7 @@
             if (eventIndex !== -1) {
                 house.total -= house.events[eventIndex].points;
                 house.events.splice(eventIndex, 1);
-                saveData(); // Persist deletion
+                saveData();
                 renderAdminList();
                 updateAll();
                 showNotification('Event deleted and saved!');
@@ -1327,7 +1407,6 @@
                 document.getElementById('adminPoints').value = event.points;
                 editingEventId = eventId;
                 document.getElementById('updateBtn').style.display = 'inline-block';
-                // Scroll to form
                 document.querySelector('.admin-panel').scrollIntoView({ behavior: 'smooth' });
             }
         }
@@ -1347,7 +1426,6 @@
             Object.entries(houses).forEach(([id, house]) => {
                 if (filter !== 'all' && filter !== id) return;
                 
-                // Sort events by newest first
                 const sortedEvents = [...house.events].sort((a, b) => b.id - a.id);
                 
                 sortedEvents.forEach(event => {
@@ -1372,16 +1450,13 @@
             }
         }
 
-        // Data Management Functions
         function resetAllData() {
             if (!confirm('⚠️ WARNING: This will delete ALL data permanently!\n\nAre you sure you want to reset to default sample data?')) {
                 return;
             }
             
-            // Clear storage
             localStorage.removeItem(STORAGE_KEY);
             
-            // Reset to initial state
             houses = {
                 north: { name: 'North House', color: '#2d8a3e', colorClass: 'north-bar', total: 0, events: [] },
                 south: { name: 'South House', color: '#1e40af', colorClass: 'south-bar', total: 0, events: [] },
@@ -1418,7 +1493,6 @@
             reader.onload = function(e) {
                 try {
                     const imported = JSON.parse(e.target.result);
-                    // Validate structure
                     if (imported && imported.north && imported.south && imported.east && imported.west) {
                         houses = imported;
                         saveData();
@@ -1433,7 +1507,7 @@
                 }
             };
             reader.readAsText(file);
-            input.value = ''; // Reset input
+            input.value = '';
         }
 
         function showNotification(message) {
@@ -1457,7 +1531,56 @@
             setTimeout(() => notif.remove(), 3000);
         }
 
-        // Charts
+        // Get all unique event names across all houses
+        function getAllUniqueEvents() {
+            const eventNames = new Set();
+            Object.values(houses).forEach(house => {
+                house.events.forEach(event => {
+                    eventNames.add(event.name);
+                });
+            });
+            return Array.from(eventNames).sort();
+        }
+
+        // Build timeline data where same event names are grouped
+        function buildTimelineData() {
+            const uniqueEvents = getAllUniqueEvents();
+            const houseData = Object.values(houses);
+            
+            // For each house, create data points for each unique event
+            // If house doesn't have that event, value is 0 or we can interpolate
+            const datasets = houseData.map(house => {
+                const data = uniqueEvents.map(eventName => {
+                    const event = house.events.find(e => e.name === eventName);
+                    return event ? event.points : 0;
+                });
+                
+                // Calculate cumulative totals for progressive line
+                const cumulative = [];
+                let sum = 0;
+                data.forEach(val => {
+                    sum += val;
+                    cumulative.push(sum);
+                });
+                
+                return {
+                    label: house.name,
+                    data: cumulative,
+                    borderColor: house.color,
+                    backgroundColor: house.color + '20',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: house.color,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                };
+            });
+            
+            return { labels: uniqueEvents, datasets };
+        }
+
         function initCharts() {
             const houseData = Object.values(houses);
             const labels = houseData.map(h => h.name);
@@ -1505,47 +1628,70 @@
                 }
             });
             
+            // New Timeline Chart with actual event names
+            const timelineData = buildTimelineData();
             const lineCtx = document.getElementById('lineChart').getContext('2d');
-            const events = ['Start', 'Event 1', 'Event 2', 'Event 3', 'Event 4', 'Current'];
             
             charts.line = new Chart(lineCtx, {
                 type: 'line',
                 data: {
-                    labels: events,
-                    datasets: houseData.map(h => ({
-                        label: h.name,
-                        data: generateProgressData(h.total),
-                        borderColor: h.color,
-                        backgroundColor: h.color + '20',
-                        tension: 0.4,
-                        fill: true
-                    }))
+                    labels: timelineData.labels,
+                    datasets: timelineData.datasets
                 },
                 options: {
                     responsive: true,
-                    interaction: { mode: 'index', intersect: false },
-                    plugins: { legend: { labels: { color: '#94a3b8' } } },
+                    interaction: { 
+                        mode: 'index', 
+                        intersect: false 
+                    },
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Cumulative Points by Event',
+                            color: '#94a3b8',
+                            font: { size: 14 }
+                        },
+                        legend: { 
+                            labels: { color: '#94a3b8', usePointStyle: true } 
+                        },
+                        tooltip: {
+                            callbacks: {
+                                title: function(context) {
+                                    return 'Event: ' + context[0].label;
+                                },
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y + ' points (cumulative)';
+                                }
+                            }
+                        }
+                    },
                     scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: '#94a3b8' } },
-                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: 'rgba(255,255,255,0.1)' }, 
+                            ticks: { color: '#94a3b8' },
+                            title: {
+                                display: true,
+                                text: 'Cumulative Points',
+                                color: '#94a3b8'
+                            }
+                        },
+                        x: { 
+                            grid: { color: 'rgba(255,255,255,0.05)' }, 
+                            ticks: { 
+                                color: '#94a3b8',
+                                maxRotation: 45,
+                                minRotation: 45
+                            },
+                            title: {
+                                display: true,
+                                text: 'Events (grouped by name)',
+                                color: '#94a3b8'
+                            }
+                        }
                     }
                 }
             });
-        }
-
-        function generateProgressData(total) {
-            const steps = 6;
-            const data = [];
-            let current = 0;
-            for (let i = 0; i < steps; i++) {
-                if (i === steps - 1) {
-                    data.push(total);
-                } else {
-                    current += (total / steps) * (0.5 + Math.random());
-                    data.push(Math.round(current));
-                }
-            }
-            return data;
         }
 
         function updateAll() {
@@ -1558,7 +1704,7 @@
         }
 
         // Initialize
-        loadData(); // Load from storage instead of initSampleData
+        loadData();
         renderLeaderboard();
         renderHouses();
 
