@@ -5,10 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inter-House Sports Meet - Buonavista College</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Firebase SDK -->
+    <!-- Firebase SDK v10.8.0 (Latest stable) -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-app.js";
-        import { getDatabase, ref, onValue, set, push, remove, update, child, get } from "https://www.gstatic.com/firebasejs/12.10.0/firebase-analytics.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue, set, push, remove, update, child, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
         
         // Make Firebase available globally
         window.firebaseApp = initializeApp;
@@ -1227,22 +1227,21 @@
         <span id="syncText">Live Sync Active</span>
     </div>
 
-   <script type="module">
-  
-  const firebaseConfig = {
-    apiKey: "AIzaSyDqOjbCoYigq4TulCFeo1M_NZ4yxYleitg",
-    authDomain: "sportmeet2026.firebaseapp.com",
-    projectId: "sportmeet2026",
-    storageBucket: "sportmeet2026.firebasestorage.app",
-    messagingSenderId: "588604738178",
-    appId: "1:588604738178:web:f44f9218339c287ac5c29b",
-    measurementId: "G-2PCMB96V68"
-  };
-
-  // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
-  const analytics = getAnalytics(app);
-
+    <script type="module">
+        // ==========================================
+        // FIREBASE CONFIGURATION - YOUR CONFIG HERE
+        // ==========================================
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyDqOjbCoYigq4TulCFeo1M_NZ4yxYleitg",
+            authDomain: "sportmeet2026.firebaseapp.com",
+            databaseURL: "https://sportmeet2026-default-rtdb.firebaseio.com", // ADD THIS LINE
+            projectId: "sportmeet2026",
+            storageBucket: "sportmeet2026.firebasestorage.app",
+            messagingSenderId: "588604738178",
+            appId: "1:588604738178:web:f44f9218339c287ac5c29b",
+            measurementId: "G-2PCMB96V68"
+        };
 
         // Initialize Firebase
         const app = window.firebaseApp(firebaseConfig);
