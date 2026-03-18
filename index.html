@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inter-House Sports Meet - Buonavista College</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getDatabase, ref, onValue, set, push, remove, update, child, get } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-database.js";
+        
+        // Make Firebase available globally
+        window.firebaseApp = initializeApp;
+        window.firebaseDatabase = { getDatabase, ref, onValue, set, push, remove, update, child, get };
+    </script>
     <style>
         * {
             margin: 0;
@@ -913,6 +922,16 @@
             50% { opacity: 0.5; box-shadow: 0 0 15px #22c55e; }
         }
 
+        .sync-indicator.syncing {
+            background: #f59e0b;
+            animation: pulse-orange 1s infinite;
+        }
+
+        @keyframes pulse-orange {
+            0%, 100% { opacity: 1; box-shadow: 0 0 5px #f59e0b; }
+            50% { opacity: 0.5; box-shadow: 0 0 15px #f59e0b; }
+        }
+
         /* Notification */
         .notification {
             position: fixed;
@@ -932,6 +951,35 @@
         @keyframes slideIn {
             from { transform: translateX(100%); opacity: 0; }
             to { transform: translateX(0); opacity: 1; }
+        }
+
+        /* Firebase Connection Status */
+        .firebase-status {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            padding: 0.5rem 1rem;
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .firebase-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+        }
+
+        .firebase-indicator.connected {
+            background: #22c55e;
+            box-shadow: 0 0 10px #22c55e;
         }
 
         /* Responsive */
@@ -962,6 +1010,7 @@
             .house-box { font-size: 1.2rem; padding: 0.5rem 1rem; }
             .admin-container { padding: 1rem; }
             .grid-3 { grid-template-columns: 1fr; }
+            .firebase-status { top: 10px; left: 10px; font-size: 0.7rem; }
         }
 
         .hidden { display: none !important; }
@@ -1053,6 +1102,12 @@
         </div>
     </header>
 
+    <!-- Firebase Connection Status -->
+    <div class="firebase-status" id="firebaseStatus">
+        <span class="firebase-indicator" id="firebaseIndicator"></span>
+        <span id="firebaseText">Connecting to Live Server...</span>
+    </div>
+
     <nav class="nav-tabs">
         <button class="nav-btn active" onclick="showSection('leaderboard')">Leaderboard</button>
         <button class="nav-btn" onclick="showSection('houses')">All Houses</button>
@@ -1080,6 +1135,9 @@
             <div style="text-align: center; margin-top: 2rem;">
                 <p style="color: var(--text-secondary);">Click on any house to view detailed results</p>
                 <p style="color: var(--text-secondary); margin-top: 0.5rem;">Conducted by BCG WEB TEAM</p>
+                <p style="color: var(--primary-yellow); margin-top: 0.5rem; font-size: 0.9rem;">
+                    🌍 Worldwide Live Sync Enabled
+                </p>
             </div>
         </section>
 
@@ -1165,111 +1223,45 @@
 
     <!-- Sync Status Indicator -->
     <div class="sync-status" id="syncStatus">
-        <span class="sync-indicator"></span>
-        <span>Live Sync Active</span>
+        <span class="sync-indicator" id="syncIndicator"></span>
+        <span id="syncText">Live Sync Active</span>
     </div>
 
-    <script>
-        // Sequential Animation Controller
-        function runIntroAnimation() {
-            const overlay = document.getElementById('introOverlay');
-            const stage1 = document.getElementById('stage1');
-            const stage2 = document.getElementById('stage2');
-            const stage3 = document.getElementById('stage3');
-            const houses = ['houseNorth', 'houseSouth', 'houseEast', 'houseWest'];
-            
-            setTimeout(() => {
-                stage1.classList.add('active');
-            }, 100);
-            
-            setTimeout(() => {
-                stage1.classList.remove('active');
-                stage1.classList.add('exit');
-            }, 2000);
-            
-            setTimeout(() => {
-                stage2.classList.add('active');
-            }, 2200);
-            
-            setTimeout(() => {
-                stage2.classList.remove('active');
-                stage2.classList.add('exit');
-            }, 4000);
-            
-            setTimeout(() => {
-                stage3.classList.add('active');
-            }, 4200);
-            
-            houses.forEach((houseId, index) => {
-                setTimeout(() => {
-                    document.getElementById(houseId).classList.add('show');
-                }, 4500 + (index * 400));
-            });
-            
-            setTimeout(() => {
-                overlay.classList.add('hidden');
-                setTimeout(() => {
-                    overlay.classList.add('removed');
-                }, 500);
-            }, 7500);
-        }
-
-        // Refresh Page Function
-        function refreshPage() {
-            const btn = document.querySelector('.refresh-btn');
-            btn.classList.add('spinning');
-            btn.innerHTML = '⏳ Refreshing...';
-            
-            setTimeout(() => {
-                location.reload();
-            }, 800);
-        }
-
-        // Secret Admin Panel Access - Press Shift + A + D + M + I + N rapidly
-        let keySequence = [];
-        const secretCode = ['Shift', 'a', 'd', 'm', 'i', 'n'];
+    <script type="module">
+        // ==========================================
+        // FIREBASE CONFIGURATION - WORLDWIDE LIVE SYNC
+        // ==========================================
         
-        document.addEventListener('keydown', (e) => {
-            keySequence.push(e.key);
-            if (keySequence.length > secretCode.length) {
-                keySequence.shift();
-            }
-            
-            if (keySequence.join(',') === secretCode.join(',')) {
-                openAdminPanel();
-            }
-            
-            // Also allow Ctrl+Shift+A as quick access
-            if (e.ctrlKey && e.shiftKey && e.key === 'A') {
-                e.preventDefault();
-                openAdminPanel();
-            }
-        });
-
-        function openAdminPanel() {
-            document.getElementById('hiddenAdmin').classList.add('active');
-            renderAdminList();
-        }
-
-        function closeAdminPanel() {
-            document.getElementById('hiddenAdmin').classList.remove('active');
-        }
-
-        // Broadcast Channel for Live Sync across devices/tabs
-        const broadcastChannel = new BroadcastChannel('buonavista_sports_sync');
-        
-        broadcastChannel.onmessage = (event) => {
-            if (event.data.type === 'SCORE_UPDATE') {
-                console.log('Received live update:', event.data);
-                loadData();
-                updateAllDisplays();
-                showNotification('📡 Live Update Received!');
-            }
+        // IMPORTANT: Replace with your own Firebase config
+        // Get yours at: https://firebase.google.com/
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "your-project.firebaseapp.com",
+            databaseURL: "https://your-project-default-rtdb.firebaseio.com",
+            projectId: "your-project",
+            storageBucket: "your-project.appspot.com",
+            messagingSenderId: "123456789",
+            appId: "1:123456789:web:abcdef123456"
         };
 
-        // Data Structure with LocalStorage Persistence
-        const STORAGE_KEY = 'buonavista_sports_meet_data';
-        const LAST_UPDATED_KEY = 'buonavista_last_updated';
+        // Initialize Firebase
+        const app = window.firebaseApp(firebaseConfig);
+        const db = window.firebaseDatabase.getDatabase(app);
+        
+        // Global database reference
+        window.db = db;
+        window.dbRef = window.firebaseDatabase.ref;
+        window.dbOnValue = window.firebaseDatabase.onValue;
+        window.dbSet = window.firebaseDatabase.set;
+        window.dbPush = window.firebaseDatabase.push;
+        window.dbRemove = window.firebaseDatabase.remove;
+        window.dbUpdate = window.firebaseDatabase.update;
+        window.dbGet = window.firebaseDatabase.get;
+        window.dbChild = window.firebaseDatabase.child;
+
+        // ==========================================
+        // APPLICATION STATE
+        // ==========================================
         
         let houses = {
             north: { 
@@ -1314,94 +1306,146 @@
             }
         };
 
-        function loadData() {
-            const stored = localStorage.getItem(STORAGE_KEY);
-            if (stored) {
-                try {
-                    const parsed = JSON.parse(stored);
-                    if (parsed && parsed.north && parsed.south && parsed.east && parsed.west) {
-                        houses = parsed;
-                        console.log('Data loaded from storage');
-                        return true;
+        let isAdmin = false;
+        let charts = {};
+        let currentHouseDetail = null;
+
+        // ==========================================
+        // FIREBASE REALTIME LISTENERS
+        // ==========================================
+
+        function initFirebaseListeners() {
+            // Listen for changes to each house
+            Object.keys(houses).forEach(houseId => {
+                const houseRef = window.dbRef(window.db, `houses/${houseId}`);
+                
+                window.dbOnValue(houseRef, (snapshot) => {
+                    const data = snapshot.val();
+                    if (data) {
+                        // Update local data
+                        houses[houseId].events = data.events || [];
+                        houses[houseId].total = data.total || 0;
+                        
+                        // Update UI
+                        updateAllDisplays();
+                        
+                        // Show notification if this is an update (not initial load)
+                        if (document.getElementById('firebaseIndicator').classList.contains('connected')) {
+                            showSyncNotification(houseId);
+                        }
                     }
-                } catch (e) {
-                    console.error('Error loading data:', e);
+                });
+            });
+
+            // Update connection status
+            const connectedRef = window.dbRef(window.db, '.info/connected');
+            window.dbOnValue(connectedRef, (snap) => {
+                const indicator = document.getElementById('firebaseIndicator');
+                const text = document.getElementById('firebaseText');
+                const syncIndicator = document.getElementById('syncIndicator');
+                
+                if (snap.val() === true) {
+                    indicator.classList.add('connected');
+                    text.textContent = '🌍 Live Server Connected';
+                    syncIndicator.style.background = '#22c55e';
+                    document.getElementById('syncText').textContent = 'Live Sync Active';
+                } else {
+                    indicator.classList.remove('connected');
+                    text.textContent = '⚠️ Offline - Reconnecting...';
+                    syncIndicator.style.background = '#ef4444';
+                    document.getElementById('syncText').textContent = 'Offline Mode';
                 }
-            }
-            return false;
+            });
         }
 
-        function saveData() {
+        async function saveToFirebase() {
+            const syncIndicator = document.getElementById('syncIndicator');
+            syncIndicator.classList.add('syncing');
+            
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(houses));
-                localStorage.setItem(LAST_UPDATED_KEY, Date.now().toString());
-                console.log('Data saved to storage');
-                
-                // Broadcast update to all other tabs/devices
-                broadcastChannel.postMessage({
-                    type: 'SCORE_UPDATE',
-                    timestamp: Date.now(),
-                    data: houses
+                const updates = {};
+                Object.keys(houses).forEach(houseId => {
+                    updates[`houses/${houseId}`] = {
+                        events: houses[houseId].events,
+                        total: houses[houseId].total,
+                        lastUpdated: Date.now()
+                    };
                 });
                 
-                return true;
-            } catch (e) {
-                console.error('Error saving data:', e);
+                await window.dbUpdate(window.dbRef(window.db, '/'), updates);
+                showNotification('✅ Saved to Cloud - Worldwide Synced!');
+            } catch (error) {
+                console.error('Error saving to Firebase:', error);
+                showNotification('❌ Error saving to cloud');
+            } finally {
+                setTimeout(() => {
+                    syncIndicator.classList.remove('syncing');
+                }, 500);
+            }
+        }
+
+        async function loadFromFirebase() {
+            try {
+                const snapshot = await window.dbGet(window.dbRef(window.db, 'houses'));
+                const data = snapshot.val();
+                
+                if (data) {
+                    Object.keys(data).forEach(houseId => {
+                        if (houses[houseId]) {
+                            houses[houseId].events = data[houseId].events || [];
+                            houses[houseId].total = data[houseId].total || 0;
+                        }
+                    });
+                    updateAllDisplays();
+                    return true;
+                }
+                return false;
+            } catch (error) {
+                console.error('Error loading from Firebase:', error);
                 return false;
             }
         }
 
-        function initSampleData() {
-            houses.north.events = [
-                { name: '100m Race', points: 10, id: Date.now() + 1 },
-                { name: 'Relay', points: 15, id: Date.now() + 2 },
-                { name: 'Long Jump', points: 8, id: Date.now() + 3 }
-            ];
-            houses.north.total = 33;
+        // ==========================================
+        // UI FUNCTIONS
+        // ==========================================
 
-            houses.south.events = [
-                { name: '100m Race', points: 12, id: Date.now() + 4 },
-                { name: 'Relay', points: 10, id: Date.now() + 5 },
-                { name: 'Long Jump', points: 5, id: Date.now() + 10 }
-            ];
-            houses.south.total = 27;
-
-            houses.east.events = [
-                { name: '100m Race', points: 8, id: Date.now() + 6 },
-                { name: 'Long Jump', points: 12, id: Date.now() + 7 }
-            ];
-            houses.east.total = 20;
-
-            houses.west.events = [
-                { name: 'Relay', points: 14, id: Date.now() + 8 },
-                { name: 'Shot Put', points: 10, id: Date.now() + 9 }
-            ];
-            houses.west.total = 24;
+        function showNotification(message) {
+            const existing = document.querySelector('.notification');
+            if (existing) existing.remove();
             
-            saveData();
+            const notif = document.createElement('div');
+            notif.className = 'notification';
+            notif.textContent = message;
+            document.body.appendChild(notif);
+            
+            setTimeout(() => {
+                notif.remove();
+            }, 3000);
         }
 
-        let charts = {};
+        function showSyncNotification(houseId) {
+            const house = houses[houseId];
+            const indicator = document.getElementById('syncIndicator');
+            indicator.classList.add('syncing');
+            
+            setTimeout(() => {
+                indicator.classList.remove('syncing');
+            }, 1000);
+        }
 
-        function showSection(sectionId) {
-            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            
-            if (sectionId === 'houseDetail') {
-                document.getElementById('houseDetail').classList.add('active');
-            } else {
-                document.getElementById(sectionId).classList.add('active');
-                document.querySelector(`button[onclick*="'${sectionId}'"]`).classList.add('active');
+        function updateAllDisplays() {
+            updateLeaderDisplay();
+            renderLeaderboard();
+            renderHouses();
+            if (currentHouseDetail) {
+                showHouseDetail(currentHouseDetail);
             }
-            
-            if (sectionId === 'charts') {
-                setTimeout(initCharts, 100);
+            if (document.getElementById('charts').classList.contains('active')) {
+                initCharts();
             }
-            if (sectionId === 'leaderboard') {
-                renderLeaderboard();
-            }
-            if (sectionId === 'houses') {
-                renderHouses();
+            if (document.getElementById('hiddenAdmin').classList.contains('active')) {
+                renderAdminList();
             }
         }
 
@@ -1421,8 +1465,6 @@
         }
 
         function renderLeaderboard() {
-            updateLeaderDisplay();
-            
             const sorted = Object.entries(houses).sort((a, b) => b[1].total - a[1].total);
             const podium = document.getElementById('podiumContainer');
             
@@ -1483,6 +1525,7 @@
         }
 
         function showHouseDetail(houseId) {
+            currentHouseDetail = houseId;
             const house = houses[houseId];
             document.getElementById('detailHouseName').textContent = house.name;
             document.getElementById('detailHouseName').style.color = house.color;
@@ -1523,8 +1566,37 @@
             showSection('houseDetail');
         }
 
-        // Admin Functions
-        function addEvent() {
+        function showSection(sectionId) {
+            if (sectionId !== 'houseDetail') {
+                currentHouseDetail = null;
+            }
+            
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            
+            if (sectionId === 'houseDetail') {
+                document.getElementById('houseDetail').classList.add('active');
+            } else {
+                document.getElementById(sectionId).classList.add('active');
+                document.querySelector(`button[onclick*="'${sectionId}'"]`).classList.add('active');
+            }
+            
+            if (sectionId === 'charts') {
+                setTimeout(initCharts, 100);
+            }
+            if (sectionId === 'leaderboard') {
+                renderLeaderboard();
+            }
+            if (sectionId === 'houses') {
+                renderHouses();
+            }
+        }
+
+        // ==========================================
+        // ADMIN FUNCTIONS
+        // ==========================================
+
+        window.addEvent = async function() {
             const houseId = document.getElementById('adminHouse').value;
             const eventName = document.getElementById('adminEvent').value.trim();
             const points = parseInt(document.getElementById('adminPoints').value) || 0;
@@ -1538,21 +1610,19 @@
             const newEvent = {
                 name: eventName,
                 points: points,
-                id: Date.now()
+                id: Date.now(),
+                timestamp: Date.now()
             };
             
             house.events.push(newEvent);
             house.total += points;
             
-            if (saveData()) {
-                clearAdminForm();
-                renderAdminList();
-                updateAllDisplays();
-                showNotification('✅ Event added & broadcasted live!');
-            }
+            await saveToFirebase();
+            clearAdminForm();
+            renderAdminList();
         }
 
-        function deleteEvent(houseId, eventId) {
+        window.deleteEvent = async function(houseId, eventId) {
             if (!confirm('Are you sure you want to delete this event?')) return;
             
             const house = houses[houseId];
@@ -1562,15 +1632,12 @@
                 house.total -= house.events[eventIndex].points;
                 house.events.splice(eventIndex, 1);
                 
-                if (saveData()) {
-                    renderAdminList();
-                    updateAllDisplays();
-                    showNotification('🗑️ Event deleted & synced!');
-                }
+                await saveToFirebase();
+                renderAdminList();
             }
         }
 
-        function editEvent(houseId, eventId) {
+        window.editEvent = async function(houseId, eventId) {
             const house = houses[houseId];
             const event = house.events.find(e => e.id === eventId);
             
@@ -1585,20 +1652,17 @@
                 event.name = newName;
                 event.points = newPoints;
                 
-                if (saveData()) {
-                    renderAdminList();
-                    updateAllDisplays();
-                    showNotification('✏️ Event updated & synced!');
-                }
+                await saveToFirebase();
+                renderAdminList();
             }
         }
 
-        function clearAdminForm() {
+        window.clearAdminForm = function() {
             document.getElementById('adminEvent').value = '';
             document.getElementById('adminPoints').value = '';
         }
 
-        function renderAdminList() {
+        window.renderAdminList = function() {
             const filter = document.getElementById('filterHouse').value;
             const container = document.getElementById('adminEventsList');
             container.innerHTML = '';
@@ -1633,110 +1697,34 @@
             }
         }
 
-        function resetAllData() {
-            if (!confirm('⚠️ WARNING: This will delete ALL data and reset to default!\n\nAre you sure?')) {
+        window.resetAllData = async function() {
+            if (!confirm('⚠️ WARNING: This will delete ALL data for ALL users worldwide!\n\nAre you sure?')) {
                 return;
             }
             
-            localStorage.removeItem(STORAGE_KEY);
-            localStorage.removeItem(LAST_UPDATED_KEY);
-            
-            // Broadcast reset to all devices
-            broadcastChannel.postMessage({
-                type: 'SCORE_UPDATE',
-                timestamp: Date.now(),
-                reset: true
+            // Reset local data
+            Object.keys(houses).forEach(houseId => {
+                houses[houseId].events = [];
+                houses[houseId].total = 0;
             });
             
-            location.reload();
+            // Save to Firebase (this will sync to all devices)
+            await saveToFirebase();
+            showNotification('🗑️ All data reset worldwide!');
         }
 
-        function updateAllDisplays() {
-            updateLeaderDisplay();
-            renderLeaderboard();
-            renderHouses();
-            if (document.getElementById('charts').classList.contains('active')) {
-                initCharts();
-            }
+        window.openAdminPanel = function() {
+            document.getElementById('hiddenAdmin').classList.add('active');
+            renderAdminList();
         }
 
-        function showNotification(message) {
-            const existing = document.querySelector('.notification');
-            if (existing) existing.remove();
-            
-            const notif = document.createElement('div');
-            notif.className = 'notification';
-            notif.textContent = message;
-            document.body.appendChild(notif);
-            
-            setTimeout(() => {
-                notif.remove();
-            }, 3000);
+        window.closeAdminPanel = function() {
+            document.getElementById('hiddenAdmin').classList.remove('active');
         }
 
-        // Live Polling for cross-device sync (for devices that don't support BroadcastChannel)
-        function startLiveSync() {
-            // Check for updates every 3 seconds
-            setInterval(() => {
-                const lastUpdated = localStorage.getItem(LAST_UPDATED_KEY);
-                if (lastUpdated) {
-                    const currentData = JSON.stringify(houses);
-                    const storedData = localStorage.getItem(STORAGE_KEY);
-                    
-                    if (storedData && storedData !== currentData) {
-                        console.log('Detected external data change, syncing...');
-                        loadData();
-                        updateAllDisplays();
-                        showNotification('📡 Live Sync: New scores received!');
-                    }
-                }
-            }, 3000);
-        }
-
-        function getAllUniqueEvents() {
-            const eventNames = new Set();
-            Object.values(houses).forEach(house => {
-                house.events.forEach(event => {
-                    eventNames.add(event.name);
-                });
-            });
-            return Array.from(eventNames).sort();
-        }
-
-        function buildTimelineData() {
-            const uniqueEvents = getAllUniqueEvents();
-            const houseData = Object.values(houses);
-            
-            const datasets = houseData.map(house => {
-                const data = uniqueEvents.map(eventName => {
-                    const event = house.events.find(e => e.name === eventName);
-                    return event ? event.points : 0;
-                });
-                
-                const cumulative = [];
-                let sum = 0;
-                data.forEach(val => {
-                    sum += val;
-                    cumulative.push(sum);
-                });
-                
-                return {
-                    label: house.name,
-                    data: cumulative,
-                    borderColor: house.color,
-                    backgroundColor: house.color + '20',
-                    tension: 0.3,
-                    fill: true,
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
-                    pointBackgroundColor: house.color,
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2
-                };
-            });
-            
-            return { labels: uniqueEvents, datasets };
-        }
+        // ==========================================
+        // CHARTS
+        // ==========================================
 
         function initCharts() {
             const houseData = Object.values(houses);
@@ -1796,10 +1784,7 @@
                 },
                 options: {
                     responsive: true,
-                    interaction: { 
-                        mode: 'index', 
-                        intersect: false 
-                    },
+                    interaction: { mode: 'index', intersect: false },
                     plugins: {
                         title: {
                             display: true,
@@ -1807,58 +1792,139 @@
                             color: '#94a3b8',
                             font: { size: 14 }
                         },
-                        legend: { 
-                            labels: { color: '#94a3b8', usePointStyle: true } 
-                        },
-                        tooltip: {
-                            callbacks: {
-                                title: function(context) {
-                                    return 'Event: ' + context[0].label;
-                                },
-                                label: function(context) {
-                                    return context.dataset.label + ': ' + context.parsed.y + ' points (cumulative)';
-                                }
-                            }
-                        }
+                        legend: { labels: { color: '#94a3b8', usePointStyle: true } }
                     },
                     scales: {
                         y: { 
                             beginAtZero: true, 
                             grid: { color: 'rgba(255,255,255,0.1)' }, 
-                            ticks: { color: '#94a3b8' },
-                            title: {
-                                display: true,
-                                text: 'Cumulative Points',
-                                color: '#94a3b8'
-                            }
+                            ticks: { color: '#94a3b8' }
                         },
                         x: { 
                             grid: { color: 'rgba(255,255,255,0.05)' }, 
-                            ticks: { 
-                                color: '#94a3b8',
-                                maxRotation: 45,
-                                minRotation: 45
-                            },
-                            title: {
-                                display: true,
-                                text: 'Events (grouped by name)',
-                                color: '#94a3b8'
-                            }
+                            ticks: { color: '#94a3b8', maxRotation: 45, minRotation: 45 }
                         }
                     }
                 }
             });
         }
 
-        // Initialize
-        if (!loadData()) {
-            initSampleData();
+        function buildTimelineData() {
+            const uniqueEvents = [...new Set(Object.values(houses).flatMap(h => h.events.map(e => e.name)))].sort();
+            const houseData = Object.values(houses);
+            
+            const datasets = houseData.map(house => {
+                const data = uniqueEvents.map(eventName => {
+                    const event = house.events.find(e => e.name === eventName);
+                    return event ? event.points : 0;
+                });
+                
+                const cumulative = [];
+                let sum = 0;
+                data.forEach(val => {
+                    sum += val;
+                    cumulative.push(sum);
+                });
+                
+                return {
+                    label: house.name,
+                    data: cumulative,
+                    borderColor: house.color,
+                    backgroundColor: house.color + '20',
+                    tension: 0.3,
+                    fill: true,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointBackgroundColor: house.color,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2
+                };
+            });
+            
+            return { labels: uniqueEvents, datasets };
         }
-        
-        renderLeaderboard();
-        renderHouses();
+
+        // ==========================================
+        // UTILITIES
+        // ==========================================
+
+        window.refreshPage = function() {
+            const btn = document.querySelector('.refresh-btn');
+            btn.classList.add('spinning');
+            btn.innerHTML = '⏳ Refreshing...';
+            
+            setTimeout(() => {
+                location.reload();
+            }, 800);
+        }
+
+        // Secret Admin Access - Ctrl+Shift+A
+        document.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+                e.preventDefault();
+                openAdminPanel();
+            }
+        });
+
+        // ==========================================
+        // INITIALIZATION
+        // ==========================================
+
+        function runIntroAnimation() {
+            const overlay = document.getElementById('introOverlay');
+            const stage1 = document.getElementById('stage1');
+            const stage2 = document.getElementById('stage2');
+            const stage3 = document.getElementById('stage3');
+            const houses = ['houseNorth', 'houseSouth', 'houseEast', 'houseWest'];
+            
+            setTimeout(() => stage1.classList.add('active'), 100);
+            setTimeout(() => {
+                stage1.classList.remove('active');
+                stage1.classList.add('exit');
+            }, 2000);
+            setTimeout(() => stage2.classList.add('active'), 2200);
+            setTimeout(() => {
+                stage2.classList.remove('active');
+                stage2.classList.add('exit');
+            }, 4000);
+            setTimeout(() => stage3.classList.add('active'), 4200);
+            
+            houses.forEach((houseId, index) => {
+                setTimeout(() => {
+                    document.getElementById(houseId).classList.add('show');
+                }, 4500 + (index * 400));
+            });
+            
+            setTimeout(() => {
+                overlay.classList.add('hidden');
+                setTimeout(() => overlay.classList.add('removed'), 500);
+            }, 7500);
+        }
+
+        // Initialize
         runIntroAnimation();
-        startLiveSync(); // Start live sync polling
+        
+        // Initialize Firebase and load data
+        setTimeout(async () => {
+            initFirebaseListeners();
+            const loaded = await loadFromFirebase();
+            if (!loaded) {
+                // Initialize with sample data if Firebase is empty
+                houses.north.events = [
+                    { name: '100m Race', points: 10, id: Date.now() + 1, timestamp: Date.now() },
+                    { name: 'Relay', points: 15, id: Date.now() + 2, timestamp: Date.now() }
+                ];
+                houses.north.total = 25;
+                
+                houses.south.events = [
+                    { name: '100m Race', points: 12, id: Date.now() + 3, timestamp: Date.now() }
+                ];
+                houses.south.total = 12;
+                
+                await saveToFirebase();
+            }
+            updateAllDisplays();
+        }, 1000);
     </script>
 </body>
 </html>
