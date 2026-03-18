@@ -1577,7 +1577,7 @@ const firebaseConfig = {
                 document.getElementById('houseDetail').classList.add('active');
             } else {
                 document.getElementById(sectionId).classList.add('active');
-                document.querySelector(`button[onclick*="'${sectionId}'"]`).classList.add('active');
+                document.querySelector("button[onclick*='" + sectionId + "']").classList.add('active');
             }
             
             if (sectionId === 'charts') {
