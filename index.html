@@ -1109,9 +1109,9 @@
     </div>
 
     <nav class="nav-tabs">
-        <button class="nav-btn active" onclick="showSection('leaderboard')">Leaderboard</button>
-        <button class="nav-btn" onclick="showSection('houses')">All Houses</button>
-        <button class="nav-btn" onclick="showSection('charts')">Statistics</button>
+        <button class="nav-btn active" data-section="leaderboard" onclick="showSection('leaderboard')">Leaderboard</button>
+        <button class="nav-btn" data-section="houses" onclick="showSection('houses')">All Houses</button>
+        <button class="nav-btn" data-section="charts" onclick="showSection('charts')">Statistics</button>
     </nav>
 
     <div class="container">
@@ -1565,24 +1565,45 @@ const firebaseConfig = {
             showSection('houseDetail');
         }
 
-        function showSection(sectionId) {
+        // ==========================================
+        // FIXED NAVIGATION FUNCTION
+        // ==========================================
+        
+        window.showSection = function(sectionId) {
             if (sectionId !== 'houseDetail') {
                 currentHouseDetail = null;
             }
             
+            // Hide all sections
             document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            
+            // Remove active class from all nav buttons
             document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
             
+            // Show the selected section
             if (sectionId === 'houseDetail') {
                 document.getElementById('houseDetail').classList.add('active');
             } else {
-                document.getElementById(sectionId).classList.add('active');
-                document.querySelector("button[onclick*='" + sectionId + "']").classList.add('active');
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.classList.add('active');
+                }
+                
+                // Find and activate the corresponding nav button using data-section attribute
+                const navButtons = document.querySelectorAll('.nav-btn');
+                navButtons.forEach(btn => {
+                    if (btn.getAttribute('data-section') === sectionId) {
+                        btn.classList.add('active');
+                    }
+                });
             }
             
+            // Initialize charts if showing charts section
             if (sectionId === 'charts') {
                 setTimeout(initCharts, 100);
             }
+            
+            // Re-render content if needed
             if (sectionId === 'leaderboard') {
                 renderLeaderboard();
             }
