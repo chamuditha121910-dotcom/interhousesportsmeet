@@ -1290,7 +1290,7 @@ const firebaseConfig = {
                 total: 0, 
                 events: [],
                 members: 48,
-                houseCaptain: { name: 'Chamika Tayasanka', img: 'https://i.pravatar.cc/150?img=9' },
+                houseCaptain: { name: 'Chamika Jayasanka', img: 'https://i.pravatar.cc/150?img=9' },
                 sportCaptain: { name: 'Thanura Adeesh', img: 'https://i.pravatar.cc/150?img=15' }
             },
             west: { 
@@ -1345,7 +1345,7 @@ const firebaseConfig = {
                 
                 if (snap.val() === true) {
                     indicator.classList.add('connected');
-                    text.textContent = '🌍';
+                    text.textContent = '';
                     syncIndicator.style.background = '#22c55e';
                     document.getElementById('syncText').textContent = 'Live Sync Active';
                 } else {
